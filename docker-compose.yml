@@ -2,9 +2,9 @@
 # cargar la terminología.
 #
 # Inicio rápido:
-#   1. cp snowstorm-lite.env.example snowstorm-lite.env   # después editá ADMIN_PASSWORD
+#   1. cp snowstorm-lite.env.example snowstorm-lite.env   # luego edita ADMIN_PASSWORD
 #   2. docker compose up -d
-#   3. abrí http://localhost:8080
+#   3. abre http://localhost:8080
 #
 # El servicio init-permissions corrige el dueño del volumen (la imagen corre como uid 1000
 # pero un volumen nuevo es de root), así funciona al primer arranque sin chown manual.

@@ -1,0 +1,46 @@
+# Snowstorm Lite (edición español) — ver README.md para la instalación completa y cómo
+# cargar la terminología.
+#
+# Inicio rápido:
+#   1. cp snowstorm-lite.env.example snowstorm-lite.env   # después editá ADMIN_PASSWORD
+#   2. docker compose up -d
+#   3. abrí http://localhost:8080
+#
+# El servicio init-permissions corrige el dueño del volumen (la imagen corre como uid 1000
+# pero un volumen nuevo es de root), así funciona al primer arranque sin chown manual.
+# Explicación completa en README.md.
+
+services:
+  # Corre una vez como root, corrige el dueño del volumen, y termina.
+  init-permissions:
+    image: snomedinternational/snowstorm-lite:2.5.2
+    user: "0:0"
+    entrypoint: ["sh", "-c", "chown -R 1000:1000 /app/lucene-index"]
+    volumes:
+      - snowstorm-lite-volume:/app/lucene-index
+
+  snowstorm-lite:
+    image: snomedinternational/snowstorm-lite:2.5.2
+    container_name: snowstorm-lite
+    depends_on:
+      init-permissions:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    env_file:
+      - snowstorm-lite.env
+    volumes:
+      - snowstorm-lite-volume:/app/lucene-index
+    command:
+      - "--index.path=lucene-index/data"
+      # Persistir las descargas de sindicación dentro del volumen (escribible) para que se
+      # guarden y reutilicen entre reinicios. Ver README.md (Opción A).
+      - "--syndication.rf2-download-cache-directory=lucene-index/rf2-cache"
+      # Persistir la config del feed (URL/credenciales guardadas desde Settings) dentro del
+      # volumen, para que sobreviva a reinicios. Sin esto se escribe en /app (root) y falla
+      # con AccessDenied, así que el feed configurado se pierde al reiniciar.
+      - "--syndication.feed-config-file=lucene-index/syndication-feed-config.properties"
+    restart: unless-stopped
+
+volumes:
+  snowstorm-lite-volume:

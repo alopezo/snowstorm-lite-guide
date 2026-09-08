@@ -1,6 +1,6 @@
-# Snowstorm Lite — Edición en Español (Docker Compose con fix de permisos)
+# Guía de instalación — Snowstorm Lite (edición en español)
 
-Una configuración lista para usar de [Snowstorm Lite](https://github.com/IHTSDO/snowstorm-lite)
+Guía y `docker-compose.yml` listos para usar para correr [Snowstorm Lite](https://github.com/IHTSDO/snowstorm-lite)
 (servidor FHIR de terminología SNOMED CT) que **funciona al primer `docker compose up`** —
 sin `chown` manual ni caída en el primer arranque. Está orientada a cargar la **edición en
 español** de SNOMED CT.

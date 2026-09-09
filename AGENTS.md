@@ -1,118 +1,121 @@
-# AGENTS.md — guía para un asistente de IA que ayuda a instalar Snowstorm Lite (edición español)
+# AGENTS.md — playbook for an AI assistant helping install Snowstorm Lite
 
-Estás ayudando a un usuario a levantar **Snowstorm Lite** (servidor FHIR de terminología
-SNOMED CT) localmente con Docker, usando los archivos de este repo (`docker-compose.yml`,
-`snowstorm-lite.env.example`, `README.md`). Este repo está orientado a la **edición en
-español**. Sigue este playbook. El README tiene los comandos exactos y los bloques para
-copiar/pegar — úsalos; este archivo te dice *cómo conducir el proceso*.
+You are helping a user stand up **Snowstorm Lite** (a SNOMED CT FHIR terminology server)
+locally with Docker, using the files in this repo (`docker-compose.yml`,
+`snowstorm-lite.env.example`, `README.md`). It works for **any SNOMED CT edition**
+(International, national/language extensions, or self-contained editions). Follow this
+playbook. The README has the exact commands and copy/paste blocks — use them; this file tells
+you *how to drive the process*.
 
-**Guía al usuario en español.**
+**Guide the user in the language they write to you in.**
 
-## Principios de trabajo
-- **Detecta el sistema operativo** del usuario (macOS / Linux / Windows) y muestra solo los
-  comandos de ese SO. No vuelques todas las variantes juntas.
-- **Ve paso a paso y verifica cada uno** antes de seguir. Confirma que el comando previo
-  funcionó (código de salida, salida esperada) en vez de asumirlo.
-- **Asume que el usuario puede no ser técnico.** Explica en una línea qué hace cada comando.
-- **Nunca inventes un `version-uri`** de una edición SNOMED. Búscalo (ver los ejemplos de
-  Edition URI enlazados en el README) o derívalo de la edición/módulo que nombre el usuario,
-  y confírmalo con él.
-- **Secretos:** el usuario elige su propio `ADMIN_PASSWORD`. No pidas credenciales MLDS a
-  menos que elija la Opción A, y nunca repitas contraseñas completas de vuelta. El usuario
-  puede entregarte un `snowstorm-lite.env` ya armado por él (útil en demos por pantalla
-  compartida): el stack lee las credenciales de ese archivo, así que **no le pidas que
-  revele las contraseñas en el chat** — basta con que el archivo exista en la carpeta.
+## Operating principles
+- **Detect the user's OS** (macOS / Linux / Windows) and show only the commands for that OS.
+  Don't dump every variant at once.
+- **Go one step at a time and verify each** before moving on. Confirm the previous command
+  succeeded (exit code, expected output) instead of assuming.
+- **Assume the user may be non-technical.** Explain in one line what each command does.
+- **Never invent a `version-uri` or `editionId`** for a SNOMED edition. Look it up (Edition
+  URI examples linked in the README, or the syndication listing) or derive it from the
+  edition/module the user names, and confirm it with them.
+- **Secrets:** the user picks their own `ADMIN_PASSWORD`. Don't ask for MLDS credentials
+  unless they choose Option A, and never echo passwords back in full. The user may hand you a
+  ready-made `snowstorm-lite.env` (handy for screen-shared demos): the stack reads credentials
+  from that file, so **don't ask them to reveal the passwords in chat** — it's enough that the
+  file exists in the folder.
 
-## Paso 0 — Verificaciones previas (hazlas primero, antes que nada)
-Ejecuta e interpreta esto; resuelve lo que falle antes de continuar.
+## Step 0 — Preflight checks (do these first, before anything else)
+Run and interpret these; fix whatever fails before continuing.
 
-1. **Docker instalado y corriendo:**
+1. **Docker installed and running:**
    ```bash
    docker version
    ```
-   Si da error, el usuario debe instalar/arrancar Docker Desktop (macOS/Windows) o el
-   Docker Engine (Linux) primero.
+   If it errors, the user must install/start Docker Desktop (macOS/Windows) or the Docker
+   Engine (Linux) first.
 
-2. **Memoria suficiente para la JVM (crítico).** La app corre con `-Xmx4g`, así que Docker
-   necesita ~5–6 GB disponibles o el import muere por **OOM**. Verifica lo que tiene Docker:
+2. **Enough memory for the JVM (critical).** The app runs with `-Xmx4g`, so Docker needs
+   ~5–6 GB available or the import gets **OOM-killed**. Check what Docker has:
    ```bash
    docker info --format '{{.MemTotal}}'
    ```
-   Si es menor a ~5000000000 (5 GB), dile al usuario que suba la memoria de Docker Desktop
-   (Settings → Resources → Memory) antes de cargar la terminología. Es la falla real más
-   común — verifícala de entrada.
+   If it's below ~5000000000 (5 GB), tell the user to raise Docker Desktop's memory
+   (Settings → Resources → Memory) before loading a terminology. It's the most common
+   real-world failure — check it up front.
 
-3. **Puerto 8080 libre** (o planifica cambiar el puerto del host en el compose si no lo está).
+3. **Port 8080 free** (or plan to change the host port in the compose if it isn't).
 
-## Paso 1 — Obtener los archivos y levantar el stack
-Guía al usuario por las secciones del README "Obtén los archivos", "Configura tu archivo de
-entorno" y "Levanta el servidor". Puntos clave:
-- Debe crear `snowstorm-lite.env` a partir del `.example` y poner `ADMIN_PASSWORD`.
-- Se arranca con `docker compose up -d`. El servicio `init-permissions` corre una vez y
-  corrige el dueño del volumen automáticamente — **no** le digas que corra `docker run` a
-  mano o chocará con `AccessDeniedException`.
-- Verifica: `docker compose ps` muestra `snowstorm-lite` Up, y los logs terminan con
+## Step 1 — Get the files and start the stack
+Guide the user through the README sections "Get the files", "Configure your env file" and
+"Start the server". Key points:
+- They must create `snowstorm-lite.env` from the `.example` and set `ADMIN_PASSWORD`.
+- Start it with `docker compose up -d`. The `init-permissions` service runs once and fixes
+  volume ownership automatically — **don't** tell them to run `docker run` by hand or they'll
+  hit `AccessDeniedException`.
+- Verify: `docker compose ps` shows `snowstorm-lite` Up, and the logs end with
   *"Snowstorm Lite started. Please load a SNOMED CT package."*
 
-## Paso 2 — Elegir cómo cargar la terminología (pregúntale al usuario)
-Pregunta: **"¿Tienes (A) credenciales MLDS, (B) los archivos RF2 ya descargados, o
-(C) nada — solo quieres probar?"** Luego sigue la opción correspondiente del README.
+## Step 2 — Choose how to load the terminology (ask the user)
+Ask: **"Do you have (A) MLDS credentials, (B) the RF2 files already, or (C) nothing — just
+want to test?"** Then follow the matching option in the README. Also ask **which edition**
+they want (International, a national/language edition, etc.) — it drives the `version-uri` and
+how many files.
 
-> **Atención:** Snowstorm Lite mantiene **una sola edición a la vez** — cargar/instalar otra
-> **reemplaza** la anterior. Avisa al usuario antes de cargar algo si ya tiene una edición
-> que quiere conservar.
-- **A — Sindicación MLDS:** pon `SYNDICATION_*` en el env y `docker compose up -d` de nuevo
-  para aplicar. Luego **pregúntale al usuario cómo quiere disparar la carga**:
-  (1) por el **dashboard** — recomendado y lo más simple; la mayoría va a preferir esto —, o
-  (2) que tú la dispares por la API admin. **Por defecto llévalo al dashboard y limítate a
-  acompañarlo a abrir la app:** que abra http://localhost:8080, entre a **Syndication**,
-  elija la edición en español y le dé instalar. Usa la API solo si te lo pide expresamente.
-  Las ediciones multi-paquete (español = International + extensión) se cargan
-  automáticamente. (Recuerda: instalar necesita auth admin en el navegador — ver Opción C.)
-  Si NO puedes manejar el navegador (eres un agente de CLI), díselo al usuario y ofrécele:
-  o le pasas los clics exactos del dashboard para que los haga él (son pocos), o disparas la
-  carga por la API admin (`POST /syndication/install` con `{editionId, version,
-  derivativeContentItemVersions:[]}`) y sigues el progreso con
-  `GET /syndication/install/{taskId}`. No inventes el `editionId`/`version`: primero lista
-  las ediciones reales del feed (`GET /syndication/snomed-editions`) y elige con el usuario.
-  MLDS suele ofrecer varias candidatas: para "edición español" genérica la correcta es
-  **SNOMED CT Spanish package** (módulo `450829007`); Argentina y Uruguay son ediciones
-  nacionales distintas — confirma cuál quiere antes de instalar.
-- **B — Archivos RF2 locales:** súbelos con el curl a `load-package`. Como el español son
-  DOS paquetes (International + extensión español), sube LOS DOS en una sola llamada con el
-  `version-uri` de la edición (`http://snomed.info/sct/450829007/version/AAAAMMDD`). Confirma
-  que el set esté completo (una extensión nacional necesita también el paquete International).
-  `load-package` es **síncrono** — el curl queda bloqueado hasta terminar (unos minutos) y
-  devuelve HTTP 200.
-- **C — Feed demo:** en el dashboard, Settings → Syndication Feed, pon la URL base
-  `https://snomed-demo-feed.vercel.app` **sin** `/feed` (el cliente lo agrega), y luego
-  instala la edición IPS Terminology Test. Aclárale que esto es solo para probar la
-  instalación; no es contenido en español. **El dashboard descubre ediciones sin
-  credenciales, pero el botón Install es una acción admin**: el navegador pedirá el Basic
-  Auth admin (usa el `ADMIN_USERNAME`/`ADMIN_PASSWORD` del env). El dashboard no tiene login
-  propio.
+> **Heads up:** Snowstorm Lite holds **one edition at a time** — loading/installing another
+> **replaces** the previous one. Warn the user before loading anything if they already have an
+> edition they want to keep.
+- **A — MLDS syndication:** put `SYNDICATION_*` in the env and `docker compose up -d` again to
+  apply. Then **ask the user how they want to trigger the load**: (1) via the **dashboard** —
+  recommended and simplest; most people prefer this —, or (2) you trigger it via the admin
+  API. **By default steer them to the dashboard and just help them open the app:** have them
+  open http://localhost:8080, go to **Syndication**, pick the edition they want and click
+  install. Use the API only if they explicitly ask. Multi-package editions (edition +
+  dependencies) load automatically. (Remember: installing needs admin auth in the browser —
+  see Option C.) If you CAN'T drive a browser (you're a CLI agent), say so and offer either:
+  give the exact dashboard clicks for them to do (there are few), or trigger the load via the
+  admin API (`POST /syndication/install` with `{editionId, version,
+  derivativeContentItemVersions:[]}`) and follow progress with
+  `GET /syndication/install/{taskId}`. Don't invent the `editionId`/`version`: first list the
+  feed's real editions (`GET /syndication/snomed-editions`) and choose with the user. MLDS
+  usually offers many candidates (International, language packages such as the SNOMED CT
+  Spanish package `450829007`, and separate national editions like Argentina/Uruguay) —
+  confirm which one they want before installing.
+- **B — Local RF2 files:** upload them with the `load-package` curl. Upload the **whole
+  dependency chain in a single call**, with the top edition's `version-uri`. How many files:
+  **1** for the International Edition alone; **2** for a common extension (International + the
+  extension); **3** when the extension depends on another extension (International +
+  intermediate extension + the national extension); or **1** again if it's a self-contained
+  **"Edition" (monolith)** package that already bundles its dependencies. `load-package` is
+  **synchronous** — the curl blocks until done (a few minutes) and returns HTTP 200.
+- **C — Demo feed:** in the dashboard, Settings → Syndication Feed, set the base URL
+  `https://snomed-demo-feed.vercel.app` **without** `/feed` (the client appends it), then
+  install the IPS Terminology Test edition. Make clear this is only to test the install (IPS
+  test data). **The dashboard discovers editions without credentials, but the Install button
+  is an admin action**: the browser will prompt for the admin Basic Auth (use the
+  `ADMIN_USERNAME`/`ADMIN_PASSWORD` from the env). The dashboard has no login of its own.
 
-## Paso 3 — Confirmar el éxito
-- Que haya un CodeSystem cargado:
+## Step 3 — Confirm success
+- That a CodeSystem is loaded:
   ```bash
   curl -s "http://localhost:8080/fhir/CodeSystem?_format=json"
   ```
-- Al ser edición de idioma, confirma que un término resuelve en español:
+- That a known concept resolves (code 195967001 → "Asthma"):
   ```bash
-  curl -s "http://localhost:8080/fhir/CodeSystem/\$lookup?system=http://snomed.info/sct&code=195967001&displayLanguage=es&_format=json"
+  curl -s "http://localhost:8080/fhir/CodeSystem/\$lookup?system=http://snomed.info/sct&code=195967001&_format=json"
   ```
-  (código 195967001 → display "asma"). Luego entrega la base FHIR http://localhost:8080/fhir.
+  For a language edition, add `&displayLanguage=<lang>` to check terms in that language (e.g.
+  `es` → "asma"). Then hand off the FHIR base http://localhost:8080/fhir.
 
-## Playbook de diagnóstico (síntoma → causa probable → acción)
-| Síntoma | Causa probable | Acción |
-|---------|----------------|--------|
-| El contenedor sale durante el import; exit code 137; `OOMKilled=true` | Falta memoria para `-Xmx4g` | Sube la memoria de Docker Desktop a ≥ 5–6 GB y reintenta. Verificación: `docker inspect snowstorm-lite --format '{{.State.OOMKilled}} {{.State.ExitCode}}'` |
-| `bind: address already in use` en 8080 | Puerto ocupado | Cambia el puerto del host en el compose (ej. `"8081:8080"`) y usa ese puerto |
-| `java.nio.file.AccessDeniedException: /app/lucene-index/data` | Corrió `docker run` a mano, saltándose el init | Usa `docker compose up -d` (corrige el dueño del volumen) |
-| Feed 404 / `.../feed/feed` | Puso la URL del feed **con** `/feed` | Usar la URL base sin `/feed` |
-| Opción B: el import falla / faltan conceptos | Set de archivos incompleto o `version-uri` incorrecto | Incluir el paquete International con la extensión; verificar el `version-uri` |
-| `401` en `load-package` | Credenciales admin incorrectas | Usar el `ADMIN_USERNAME`/`ADMIN_PASSWORD` del env |
-| Opción A: el **listado** de ediciones MLDS funciona pero la **descarga del ZIP** da `401` | `SYNDICATION_PASSWORD` con comillas o `\` de escape en el `.env` (se toma literal) | Corregir a valor literal (ej. `*` no `\*`), recrear el contenedor y reintentar |
-| Falla la descarga de la imagen | Sin internet / proxy | Verificar conectividad; configurar el proxy de Docker si hay uno |
+## Diagnostic playbook (symptom → likely cause → action)
+| Symptom | Likely cause | Action |
+|---------|--------------|--------|
+| Container exits during import; exit code 137; `OOMKilled=true` | Not enough memory for `-Xmx4g` | Raise Docker Desktop memory to ≥ 5–6 GB and retry. Check: `docker inspect snowstorm-lite --format '{{.State.OOMKilled}} {{.State.ExitCode}}'` |
+| `bind: address already in use` on 8080 | Port taken | Change the host port in the compose (e.g. `"8081:8080"`) and use that port |
+| `java.nio.file.AccessDeniedException: /app/lucene-index/data` | Ran `docker run` by hand, skipping the init | Use `docker compose up -d` (fixes volume ownership) |
+| Feed 404 / `.../feed/feed` | Entered the feed URL **with** `/feed` | Use the base URL without `/feed` |
+| Option B: import fails / concepts missing | Incomplete file set or wrong `version-uri` | Upload the whole dependency chain (e.g. include International with the extension); verify the `version-uri` |
+| `401` on `load-package` | Wrong admin credentials | Use the `ADMIN_USERNAME`/`ADMIN_PASSWORD` from the env |
+| Option A: listing MLDS editions works but the **ZIP download** returns `401` | `SYNDICATION_PASSWORD` with quotes or a `\` escape in the `.env` (taken literally) | Fix to the literal value (e.g. `*` not `\*`), recreate the container and retry |
+| Image pull fails | No internet / proxy | Check connectivity; configure Docker's proxy if there is one |
 
-Cuando diagnostiques, lee siempre los logs: `docker compose logs -f snowstorm-lite`.
+When diagnosing, always read the logs: `docker compose logs -f snowstorm-lite`.

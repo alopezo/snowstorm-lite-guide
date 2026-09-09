@@ -1,17 +1,16 @@
-# Snowstorm Lite (edición español) — ver README.md para la instalación completa y cómo
-# cargar la terminología.
+# Snowstorm Lite — see README.md for the full setup and how to load a terminology.
 #
-# Inicio rápido:
-#   1. cp snowstorm-lite.env.example snowstorm-lite.env   # luego edita ADMIN_PASSWORD
+# Quick start:
+#   1. cp snowstorm-lite.env.example snowstorm-lite.env   # then edit ADMIN_PASSWORD
 #   2. docker compose up -d
-#   3. abre http://localhost:8080
+#   3. open http://localhost:8080
 #
-# El servicio init-permissions corrige el dueño del volumen (la imagen corre como uid 1000
-# pero un volumen nuevo es de root), así funciona al primer arranque sin chown manual.
-# Explicación completa en README.md.
+# The init-permissions service fixes the volume ownership (the image runs as uid 1000 but a
+# fresh volume is root-owned), so it works on the first start with no manual chown.
+# Full explanation in README.md.
 
 services:
-  # Corre una vez como root, corrige el dueño del volumen, y termina.
+  # Runs once as root, fixes the volume ownership, and exits.
   init-permissions:
     image: snomedinternational/snowstorm-lite:2.5.2
     user: "0:0"
@@ -33,12 +32,12 @@ services:
       - snowstorm-lite-volume:/app/lucene-index
     command:
       - "--index.path=lucene-index/data"
-      # Persistir las descargas de sindicación dentro del volumen (escribible) para que se
-      # guarden y reutilicen entre reinicios. Ver README.md (Opción A).
+      # Persist syndication downloads inside the (writable) volume so they are kept and
+      # reused across restarts. See README.md (Option A).
       - "--syndication.rf2-download-cache-directory=lucene-index/rf2-cache"
-      # Persistir la config del feed (URL/credenciales guardadas desde Settings) dentro del
-      # volumen, para que sobreviva a reinicios. Sin esto se escribe en /app (root) y falla
-      # con AccessDenied, así que el feed configurado se pierde al reiniciar.
+      # Persist the feed config (URL/credentials saved from Settings) inside the volume so it
+      # survives restarts. Without this it's written to /app (root) and fails with
+      # AccessDenied, so the configured feed is lost on restart.
       - "--syndication.feed-config-file=lucene-index/syndication-feed-config.properties"
     restart: unless-stopped
 

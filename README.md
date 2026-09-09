@@ -1,271 +1,290 @@
-# Guía de instalación — Snowstorm Lite (edición en español)
+# Install guide — Snowstorm Lite
 
-Guía y `docker-compose.yml` listos para usar para correr [Snowstorm Lite](https://github.com/IHTSDO/snowstorm-lite)
-(servidor FHIR de terminología SNOMED CT) que **funciona al primer `docker compose up`** —
-sin `chown` manual ni caída en el primer arranque. Está orientada a cargar la **edición en
-español** de SNOMED CT.
+A ready-to-use guide and `docker-compose.yml` for running [Snowstorm Lite](https://github.com/IHTSDO/snowstorm-lite)
+(a SNOMED CT FHIR terminology server) that **works on the first `docker compose up`** — no
+manual `chown`, no first-run crash. It works for **any SNOMED CT edition** (International,
+national/language extensions, or self-contained editions).
 
-## ¿Tienes un agente de IA? Empieza aquí
-Copia esto y pásaselo a tu agente (Claude Code, etc.). Va a leer las instrucciones y
-**hacerte las preguntas necesarias** (tu sistema operativo, si tienes credenciales MLDS,
-archivos, o nada) y guiarte paso a paso:
+> 🌐 Spanish-language version of this guide (oriented to the Spanish edition): branch
+> [`main`](https://github.com/alopezo/snowstorm-lite-guide/tree/main).
 
-```
-Ayúdame a instalar Snowstorm Lite (edición español) paso a paso.
-Clona/lee este repo, sigue el AGENTS.md, haz las verificaciones previas
-y pregúntame lo que necesites (SO, credenciales MLDS / archivos / nada):
-https://github.com/alopezo/snowstorm-lite-guide
-```
+> **Got an AI agent? Start here.** Copy this and hand it to your agent (Claude Code, etc.).
+> It will read the instructions and **ask you what it needs** (your OS, whether you have MLDS
+> credentials, files, or nothing) and guide you step by step:
+>
+> ```
+> Help me install Snowstorm Lite step by step.
+> Clone/read this repo (english branch), follow AGENTS.md, run the preflight
+> checks and ask me what you need (OS, MLDS credentials / files / nothing):
+> https://github.com/alopezo/snowstorm-lite-guide/tree/english
+> ```
+>
+> Prefer to do it by hand? Follow the rest of this README.
 
-Si prefieres hacerlo a mano, sigue el resto de este README.
+## Files
+| File | What it is |
+|------|------------|
+| `docker-compose.yml` | The stack: an init step that fixes volume permissions + the app. |
+| `snowstorm-lite.env.example` | Template for your env file. Copy it to `snowstorm-lite.env`. |
+| `AGENTS.md` | Playbook for an AI assistant guiding a user through this setup. |
+| `.gitignore` | Keeps your real env and the zips from being committed by accident. |
+| `README.md` | This file. |
 
-## Archivos
-| Archivo | Qué es |
-|---------|--------|
-| `docker-compose.yml` | El stack: un paso init que corrige permisos del volumen + la app. |
-| `snowstorm-lite.env.example` | Plantilla para tu archivo de entorno. Cópiala a `snowstorm-lite.env`. |
-| `AGENTS.md` | Guía para que un asistente de IA acompañe al usuario en esta instalación. |
-| `.gitignore` | Evita subir tu env real y los zips por accidente. |
-| `README.md` | Este archivo. |
+## Prerequisites
+- **Docker** installed and running (Docker Desktop on macOS/Windows, Docker Engine on
+  Linux). Check with `docker version`.
+- **Memory:** the server runs the JVM with `-Xmx4g`, so give Docker **~5–6 GB** or more
+  (Docker Desktop → Settings → Resources → Memory). With less, loading a terminology gets
+  **OOM-killed** mid-import. This is the most common failure — set it before you start.
+- **Disk:** a few GB free (Lucene index + any downloaded RF2 zips).
+- **Port 8080** free (or change the host port in the compose).
+- **Internet** to pull the image (~540 MB) and, for Options A/C, to reach the feed.
 
-## Requisitos previos
-- **Docker** instalado y corriendo (Docker Desktop en macOS/Windows, Docker Engine en
-  Linux). Verifícalo con `docker version`.
-- **Memoria:** el servidor corre la JVM con `-Xmx4g`, así que asigna a Docker **~5–6 GB** o
-  más (Docker Desktop → Settings → Resources → Memory). Con menos, la carga de la
-  terminología muere por falta de memoria (**OOM**) a mitad del import. Es la falla más
-  común — configúralo antes de empezar.
-- **Disco:** unos GB libres (índice Lucene + zips RF2 descargados).
-- **Puerto 8080** libre (o cambia el puerto del host en el compose).
-- **Internet** para descargar la imagen (~540 MB) y, en las Opciones A/C, alcanzar el feed.
-
-## 1. Obtén los archivos
-Clona el repo:
+## 1. Get the files
+Clone the repo (this `english` branch):
 ```bash
-git clone https://github.com/alopezo/snowstorm-lite-guide.git
+git clone -b english https://github.com/alopezo/snowstorm-lite-guide.git
 cd snowstorm-lite-guide
 ```
-¿Sin `git`? Descarga el ZIP desde la página del repo (botón **Code → Download ZIP**) y
-descomprímelo, o baja archivos sueltos por su URL *raw*, por ejemplo:
+No `git`? Download the ZIP from the repo page (**Code → Download ZIP**) and unzip it, or grab
+individual files by their *raw* URL, e.g.:
 ```bash
-curl -L -O https://raw.githubusercontent.com/alopezo/snowstorm-lite-guide/main/docker-compose.yml
-curl -L -O https://raw.githubusercontent.com/alopezo/snowstorm-lite-guide/main/snowstorm-lite.env.example
+curl -L -O https://raw.githubusercontent.com/alopezo/snowstorm-lite-guide/english/docker-compose.yml
+curl -L -O https://raw.githubusercontent.com/alopezo/snowstorm-lite-guide/english/snowstorm-lite.env.example
 ```
-(En Windows PowerShell usa `curl.exe`.)
+(On Windows PowerShell use `curl.exe`.)
 
-## 2. Configura tu archivo de entorno
+## 2. Configure your env file
 ```bash
-cp snowstorm-lite.env.example snowstorm-lite.env   # luego edítalo
+cp snowstorm-lite.env.example snowstorm-lite.env   # then edit it
 ```
 
-| Clave | ¿Requerida? | Para qué |
-|-------|-------------|----------|
-| `ADMIN_USERNAME` | opcional (por defecto `admin`) | Login del dashboard / API admin |
-| `ADMIN_PASSWORD` | **sí** | Contraseña admin — pon la tuya |
-| `SYNDICATION_USERNAME` | opcional | Solo para descarga automática vía MLDS (Opción A) |
-| `SYNDICATION_PASSWORD` | opcional | Solo para descarga automática vía MLDS (Opción A) |
+| Key | Required | Purpose |
+|-----|----------|---------|
+| `ADMIN_USERNAME` | optional (defaults to `admin`) | Dashboard / admin API login |
+| `ADMIN_PASSWORD` | **yes** | Admin password — set your own |
+| `SYNDICATION_USERNAME` | optional | Only for MLDS auto-download (Option A) |
+| `SYNDICATION_PASSWORD` | optional | Only for MLDS auto-download (Option A) |
 
-> **Contraseñas en demos (pantalla compartida).** Prepara tú mismo tu `snowstorm-lite.env`
-> de antemano y en privado. Como el stack lee las credenciales de ese archivo (`env_file`),
-> durante una demo por Zoom **no necesitas escribir ni mostrar la contraseña de MLDS en
-> pantalla** — vive solo en el archivo; mantenlo cerrado mientras compartes pantalla. Si
-> además usas un asistente de IA, puedes entregarle el `.env` ya armado: no hace falta que
-> reveles las contraseñas en el chat.
+> **Passwords in demos (screen sharing).** Prepare your `snowstorm-lite.env` yourself,
+> ahead of time and privately. Because the stack reads credentials from that file
+> (`env_file`), during a Zoom demo you **don't need to type or show the MLDS password on
+> screen** — it lives only in the file; keep it closed while sharing your screen. If you're
+> using an AI assistant, you can hand it the ready-made `.env`: no need to reveal the
+> passwords in chat.
 >
-> Salvedad: si vas a **instalar por el dashboard** (Opción A/C) y tu `ADMIN_PASSWORD` no
-> está vacía, el navegador la pedirá una vez (Basic Auth). Para no exponerla en la demo,
-> autentícate antes de compartir pantalla, o usa la vía por API (lee la contraseña del
-> archivo, no se escribe en pantalla).
+> Caveat: if you'll **install via the dashboard** (Option A/C) and your `ADMIN_PASSWORD` is
+> not empty, the browser will prompt for it once (Basic Auth). To avoid showing it in the
+> demo, authenticate before sharing your screen, or use the API path (it reads the password
+> from the file, nothing is typed on screen).
 
-## 3. Levanta el servidor
+## 3. Start the server
 ```bash
 docker compose up -d
 ```
-Abre el dashboard en **http://localhost:8080** y carga una terminología (más abajo).
-Sigue los logs con: `docker compose logs -f snowstorm-lite`
+Open the dashboard at **http://localhost:8080** and load a terminology (below).
+Follow the logs with: `docker compose logs -f snowstorm-lite`
 
 ---
 
-## ¿Por qué existe el paso init?
-La imagen publicada corre como usuario no-root (uid `1000`, hardening del contenedor). Un
-volumen Docker nuevo se crea con dueño `root`, así que la app no puede crear su índice
-Lucene y se cae en el primer arranque con:
+## Why the init step exists
+The published image runs as a non-root user (uid `1000`, container hardening). A fresh
+Docker named volume is created owned by `root`, so the app can't create its Lucene index and
+crashes on first start with:
 
 ```
 java.nio.file.AccessDeniedException: /app/lucene-index/data
 ```
 
-El servicio `init-permissions` corre una sola vez y hace `chown` del volumen a `1000:1000`
-**antes** de que arranque la app, así todo funciona sin pasos manuales.
+The `init-permissions` service runs once and `chown`s the volume to `1000:1000` **before**
+the app starts, so everything works with no manual steps.
 
 ---
 
-## Cargar la terminología
+## Loading a terminology
 
-Hay **tres formas** de cargar contenido. Elige la que corresponda a lo que tienes:
+There are **three ways** to load content. Pick the one that matches what you have:
 
-| Tienes… | Usa | ¿Credenciales? |
-|---------|-----|----------------|
-| credenciales MLDS | **Opción A** — sindicación oficial (SNOMED CT real) | sí |
-| los archivos RF2 | **Opción B** — subir los archivos locales directo | no |
-| nada (solo probar) | **Opción C** — feed demo libre (datos IPS de prueba) | no |
+| You have… | Use | Credentials? |
+|-----------|-----|--------------|
+| MLDS credentials | **Option A** — official syndication (real SNOMED CT) | yes |
+| the RF2 files | **Option B** — upload the local files directly | no |
+| nothing (just testing) | **Option C** — free demo feed (IPS test data) | no |
 
-> **Importante:** Snowstorm Lite mantiene **una sola edición SNOMED CT a la vez**. Cargar o
-> instalar otra edición **reemplaza** la que estuviera cargada (el índice se sobrescribe).
+> **Important:** Snowstorm Lite holds **one SNOMED CT edition at a time**. Loading or
+> installing another edition **replaces** whatever was loaded (the index is overwritten).
 
-### Opción A — Sindicación oficial con credenciales MLDS
-Para descargar la edición en español real. Pon tus credenciales MLDS en el archivo de
-entorno:
+### Option A — Official syndication with MLDS credentials
+For downloading a real SNOMED CT edition. Put your MLDS credentials in the env file:
 ```
-SYNDICATION_USERNAME=tu-usuario-mlds
-SYNDICATION_PASSWORD=tu-password-mlds
+SYNDICATION_USERNAME=your-mlds-username
+SYNDICATION_PASSWORD=your-mlds-password
 ```
-Luego, en el dashboard elige **Syndication** y selecciona la **edición en español**. Las
-ediciones multi-paquete (español = International + extensión en español) se descargan y
-cargan **automáticamente**.
+Then, in the dashboard choose **Syndication** and select the edition you want. Multi-package
+editions (e.g. a national or language edition = International + extension) are downloaded and
+loaded **automatically**.
 
-> MLDS suele listar varias ediciones relacionadas: el **SNOMED CT Spanish package** genérico
-> (módulo `450829007`) y además ediciones nacionales separadas (por ejemplo Argentina,
-> Uruguay). Elige la que corresponda a tu caso — no son la misma.
+> MLDS lists many editions: the **International Edition**, language packages (e.g. the
+> **SNOMED CT Spanish package**, module `450829007`), and national editions (e.g. Argentina,
+> Uruguay). Pick the one you need.
 
-> Valor literal en el env: si tu `SYNDICATION_PASSWORD` tiene caracteres como `*` o `$`,
-> escríbelo tal cual (sin comillas ni `\`). Un escape de más provoca un `401` al descargar
-> el ZIP (ver Solución de problemas).
+> Literal value in the env: if your `SYNDICATION_PASSWORD` contains characters like `*` or
+> `$`, write it as-is (no quotes, no `\`). One stray escape causes a `401` when downloading
+> the ZIP (see Troubleshooting).
 
-Los zips RF2 descargados se cachean **dentro del volumen** en `/app/lucene-index/rf2-cache`
-(ver el flag `--syndication.rf2-download-cache-directory` en el compose), así persisten
-entre reinicios y se reutilizan en la próxima carga.
+Downloaded RF2 zips are cached **inside the volume** at `/app/lucene-index/rf2-cache` (see
+the `--syndication.rf2-download-cache-directory` flag in the compose), so they persist across
+restarts and are reused on the next load.
 
-> Sin ese flag, el directorio de cache por defecto no se puede crear (`/app` es de root, la
-> app corre como uid 1000), así que las descargas de sindicación **no** se guardarían.
+> Without that flag the default cache dir can't be created (`/app` is root-owned, the app
+> runs as uid 1000), so syndication downloads would **not** be kept.
 
-Para copiar los zips cacheados fuera del volumen y reutilizarlos:
+To copy the cached zips out of the volume and reuse them:
 ```bash
 docker cp snowstorm-lite:/app/lucene-index/rf2-cache ./rf2-cache
 ```
 
-**Alternativa: disparar la carga por API (sin dashboard).** Útil para automatizar. Primero
-lista las ediciones reales del feed y elige la correcta (no inventes el `editionId`):
+**Alternative: trigger the load via API (no dashboard).** Useful for automation. First list
+the feed's real editions and pick the right one (don't guess the `editionId`):
 ```bash
-curl -s -u admin:TU_ADMIN_PASSWORD http://localhost:8080/syndication/snomed-editions
+curl -s -u admin:YOUR_ADMIN_PASSWORD http://localhost:8080/syndication/snomed-editions
 ```
-Luego instálala (el español genérico es el módulo `450829007`):
+Then install it (example: the International Edition, module `900000000000207008`):
 ```bash
-curl -s -u admin:TU_ADMIN_PASSWORD -H 'Content-Type: application/json' \
+curl -s -u admin:YOUR_ADMIN_PASSWORD -H 'Content-Type: application/json' \
   -X POST http://localhost:8080/syndication/install \
-  -d '{"editionId":"http://snomed.info/sct/450829007","version":"20260810","derivativeContentItemVersions":[]}'
+  -d '{"editionId":"http://snomed.info/sct/900000000000207008","version":"20260701","derivativeContentItemVersions":[]}'
 ```
-La respuesta trae un `taskId`. Monitorea el progreso:
+The response includes a `taskId`. Monitor progress:
 ```bash
-curl -s -u admin:TU_ADMIN_PASSWORD http://localhost:8080/syndication/install/TASK_ID
+curl -s -u admin:YOUR_ADMIN_PASSWORD http://localhost:8080/syndication/install/TASK_ID
 ```
 
-### Opción B — Subir los archivos RF2 locales directo
-Si te pasaron los `.zip`, súbelos por la API admin — sin sindicación. Como la edición en
-español está hecha de **dos paquetes, se suben LOS DOS en una sola llamada** con el
-`version-uri` de la edición.
+### Option B — Upload local RF2 files directly
+If someone gave you the `.zip` file(s), upload them via the admin API — no syndication
+needed. Upload **every package the edition needs, in a single call**, with the edition's
+`version-uri`.
 
-**Edición en español (dos archivos):**
+**How many files?** It depends on the dependency chain — upload the target package plus
+everything it depends on, all together:
+
+| Case | Files to upload |
+|------|-----------------|
+| **International Edition** (self-contained) | **1** — just the International package |
+| A **common extension** (depends only on International) | **2** — International + the extension |
+| An extension that depends on **another extension** (e.g. a national extension of the Spanish edition) | **3** — International + the intermediate extension + the national extension |
+| A self-contained **"Edition" (monolith) package** that already bundles its dependencies | **1** — just that package |
+
+The `version-uri` is always that of the top edition you're loading.
+
+**Example — International Edition (1 file):**
 ```bash
-curl -u admin:TU_ADMIN_PASSWORD \
+curl -u admin:YOUR_ADMIN_PASSWORD \
+  --form file=@SnomedCT_InternationalRF2_PRODUCTION_20260701T120000Z.zip \
+  --form version-uri="http://snomed.info/sct/900000000000207008/version/20260701" \
+  http://localhost:8080/fhir-admin/load-package
+```
+
+**Example — an extension (2 files), here the Spanish edition:**
+```bash
+curl -u admin:YOUR_ADMIN_PASSWORD \
   --form file=@SnomedCT_InternationalRF2_PRODUCTION_20260701T120000Z.zip \
   --form file=@SnomedCT_SpanishRelease-es_PRODUCTION_20260810T120000Z.zip \
   --form version-uri="http://snomed.info/sct/450829007/version/20260810" \
   http://localhost:8080/fhir-admin/load-package
 ```
-El paquete International aporta el contenido base; el paquete español es una extensión de
-idioma que lo necesita — por eso van los dos en la **misma** petición. `load-package` es
-**síncrono**: el comando queda bloqueado hasta que termina el import (unos minutos) y solo
-entonces devuelve HTTP 200. Sigue el progreso con `docker compose logs -f snowstorm-lite`.
+The International package provides the base content; the extension requires it — that's why
+both go in the **same** request. `load-package` is **synchronous**: the command blocks until
+the import finishes (a few minutes) and only then returns HTTP 200. Follow progress with
+`docker compose logs -f snowstorm-lite`.
 
-**Windows (PowerShell)** — la misma llamada en una línea con `curl.exe`:
-```powershell
-curl.exe -u admin:TU_ADMIN_PASSWORD --form file=@SnomedCT_InternationalRF2_PRODUCTION_20260701T120000Z.zip --form file=@SnomedCT_SpanishRelease-es_PRODUCTION_20260810T120000Z.zip --form version-uri="http://snomed.info/sct/450829007/version/20260810" http://localhost:8080/fhir-admin/load-package
-```
+- On **Windows (PowerShell)** use `curl.exe` and put the whole call on one line.
+- Adjust the `.zip` names to yours and the `version-uri` to the version you're loading.
+- `version-uri` for each edition: see the
+  [Edition URI examples](https://github.com/IHTSDO/snowstorm-lite/blob/master/docs/snomed-edition-uri-examples.md).
 
-- Ajusta los nombres de los `.zip` a los tuyos y el `version-uri` a la versión que cargas.
-- `version-uri` de otras ediciones: ver los
-  [ejemplos de Edition URI](https://github.com/IHTSDO/snowstorm-lite/blob/master/docs/snomed-edition-uri-examples.md).
+### Option C — Free demo feed (no credentials, just to test the install)
+If you have no MLDS account and no files, you can point Snowstorm Lite at a public demo
+syndication feed that serves a small, freely-distributable test package: **IPS (International
+Patient Summary)**. It's for checking that the install works — just test data.
 
-### Opción C — Feed demo libre (sin credenciales, solo para probar la instalación)
-Si no tienes cuenta MLDS ni archivos, puedes apuntar Snowstorm Lite a un feed de sindicación
-demo público que sirve un paquete pequeño de prueba, de distribución libre: **IPS
-(International Patient Summary)**. Sirve para verificar que la instalación funciona; **no es
-contenido en español**, es solo de prueba.
-
-1. En el dashboard ve a **Settings → Syndication Feed**.
-2. Reemplaza la URL del feed por la **URL base** del feed demo:
+1. In the dashboard go to **Settings → Syndication Feed**.
+2. Replace the feed URL with the demo feed's **base URL**:
    ```
    https://snomed-demo-feed.vercel.app
    ```
-   > ⚠️ Pon la URL base **sin** `/feed`. Snowstorm Lite le agrega `/feed` automáticamente
-   > (hace `rootUri(base)` y luego pide `/feed`). Si escribes `.../feed`, pedirá
-   > `.../feed/feed` y da 404.
-3. Refresca, abre el menú **Syndication** e instala la edición **IPS Terminology Test**.
+   > ⚠️ Enter the base URL **without** `/feed`. Snowstorm Lite appends `/feed` itself (it
+   > does `rootUri(base)` then requests `/feed`). If you type `.../feed`, it will request
+   > `.../feed/feed` and get a 404.
+3. Refresh, open the **Syndication** menu, and install the **IPS Terminology Test** edition.
 
-> **Nota sobre autenticación:** el dashboard **descubre** ediciones sin credenciales, pero
-> **instalar** es una acción admin — el navegador pedirá usuario/contraseña admin (Basic
-> Auth). Usa el `ADMIN_USERNAME`/`ADMIN_PASSWORD` del env.
+> **Note on authentication:** the dashboard **discovers** editions without credentials, but
+> **installing** is an admin action — the browser will prompt for the admin
+> username/password (Basic Auth). Use the `ADMIN_USERNAME`/`ADMIN_PASSWORD` from the env.
 
-Fuente del feed demo: <https://github.com/alopezo/snomed-demo-feed>. Solo para
-pruebas/evaluación — no es contenido de producción. Instalar el IPS **reemplaza** la
-edición que tuvieras cargada (ver la nota de arriba).
+Demo feed source: <https://github.com/alopezo/snomed-demo-feed>. For testing/evaluation only
+— not production content. Installing the IPS **replaces** whatever edition you had loaded
+(see the note above).
 
-## Verificar que cargó
-Lista los CodeSystem cargados:
+## Verify it loaded
+List the loaded CodeSystem(s):
 ```bash
 curl -s "http://localhost:8080/fhir/CodeSystem?_format=json"
 ```
-Al ser edición en español, confirma que un término resuelve en español — el código
-`195967001` debería mostrar **"asma"**:
+Confirm a known concept resolves — code `195967001` should display **"Asthma"**:
+```bash
+curl -s "http://localhost:8080/fhir/CodeSystem/\$lookup?system=http://snomed.info/sct&code=195967001&_format=json"
+```
+For a **language edition**, add `displayLanguage` to get terms in that language, e.g. Spanish
+(→ **"asma"**):
 ```bash
 curl -s "http://localhost:8080/fhir/CodeSystem/\$lookup?system=http://snomed.info/sct&code=195967001&displayLanguage=es&_format=json"
 ```
-Si tienes `jq` (no viene por defecto en macOS), extrae solo el término y evita el ruido:
+With `jq` (not installed by default on macOS) you can extract just the term:
 ```bash
-curl -s "http://localhost:8080/fhir/CodeSystem/\$lookup?system=http://snomed.info/sct&code=195967001&displayLanguage=es&_format=json" \
+curl -s "http://localhost:8080/fhir/CodeSystem/\$lookup?system=http://snomed.info/sct&code=195967001&_format=json" \
   | jq -r '.parameter[] | select(.name=="display") | .valueString'
 ```
-La interfaz FHIR está en http://localhost:8080/fhir
+The FHIR interface is at http://localhost:8080/fhir
 
-## Gestionar el stack
+## Managing the stack
 ```bash
-docker compose logs -f snowstorm-lite   # seguir logs
-docker compose stop                      # parar (conserva los datos)
-docker compose start                     # arrancar de nuevo
-docker compose down                      # borrar contenedores (conserva el volumen/datos)
-docker compose down -v                   # borrar contenedores Y vaciar el índice cargado
-docker compose pull && docker compose up -d   # re-descargar la imagen fijada (:2.5.2)
-docker compose down -v --rmi all --remove-orphans   # limpieza TOTAL: contenedores, volumen (índice + zips) e imagen
+docker compose logs -f snowstorm-lite   # follow logs
+docker compose stop                      # stop (keeps data)
+docker compose start                     # start again
+docker compose down                      # remove containers (keeps the volume/data)
+docker compose down -v                   # remove containers AND wipe the loaded index
+docker compose pull && docker compose up -d   # re-pull the pinned image (:2.5.2)
+docker compose down -v --rmi all --remove-orphans   # FULL cleanup: containers, volume (index + zips) and image
 ```
-El último comando deja todo de cero (útil para ciclos de prueba): el próximo `up` vuelve a
-hacer el `pull` completo de la imagen.
+The last command resets everything (useful for test cycles): the next `up` re-pulls the full
+image.
 
-## Solución de problemas
-| Síntoma | Causa | Solución |
-|---------|-------|----------|
-| El contenedor sale a mitad del import; exit code 137 | Falta memoria para `-Xmx4g` | Sube la memoria de Docker a ≥ 5–6 GB y reintenta. Verificación: `docker inspect snowstorm-lite --format '{{.State.OOMKilled}} {{.State.ExitCode}}'` |
-| `bind: address already in use` (8080) | Puerto ocupado | Cambia el puerto del host en el compose, por ejemplo `"8081:8080"` |
-| `AccessDeniedException: /app/lucene-index/data` | Arrancaste con `docker run` a mano, saltándote el paso init | Usa `docker compose up -d` (corrige el dueño del volumen) |
-| Feed 404 / `.../feed/feed` | Pusiste la URL del feed **con** `/feed` | Usa la URL base **sin** `/feed` |
-| Opción B: el import falla o faltan conceptos | Set de archivos incompleto / `version-uri` incorrecto | Incluye el paquete International junto con la extensión; revisa el `version-uri` |
-| `401` en `load-package` | Credenciales admin incorrectas | Usa el `ADMIN_USERNAME`/`ADMIN_PASSWORD` de tu env |
-| Opción A: `401` al **descargar el ZIP** de MLDS (aunque el listado de ediciones funcione) | `SYNDICATION_PASSWORD` mal escrita en el `.env` (comillas o `\` de escape) | Pon el valor **literal**, sin comillas ni barras invertidas; recrea con `docker compose up -d` |
+## Troubleshooting
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Container exits mid-import; exit code 137 | Not enough memory for `-Xmx4g` | Raise Docker memory to ≥ 5–6 GB and retry. Check: `docker inspect snowstorm-lite --format '{{.State.OOMKilled}} {{.State.ExitCode}}'` |
+| `bind: address already in use` (8080) | Port taken | Change the host port in the compose, e.g. `"8081:8080"` |
+| `AccessDeniedException: /app/lucene-index/data` | Started with `docker run` by hand, skipping the init step | Use `docker compose up -d` (it fixes volume ownership) |
+| Feed 404 / `.../feed/feed` | Feed URL entered **with** `/feed` | Use the base URL **without** `/feed` |
+| Option B: import fails or concepts missing | Incomplete file set / wrong `version-uri` | Upload the whole dependency chain (e.g. include International with any extension); check the `version-uri` |
+| `401` on `load-package` | Wrong admin credentials | Use the `ADMIN_USERNAME`/`ADMIN_PASSWORD` from your env |
+| Option A: `401` when **downloading the ZIP** from MLDS (even though listing editions works) | `SYNDICATION_PASSWORD` mis-written in the `.env` (quotes or `\` escape) | Use the **literal** value, no quotes or backslashes; recreate with `docker compose up -d` |
 
-## Notas
-- Mantén privado tu `snowstorm-lite.env` real — tiene credenciales. Comparte solo el
+## Notes
+- Keep your real `snowstorm-lite.env` private — it holds credentials. Share only the
   `.example`.
-- La imagen está **fijada a `:2.5.2`** en el compose (reproducible para compartir). Para
-  actualizar a una versión nueva, cambia el tag en las dos líneas `image:` del
-  `docker-compose.yml` y recrea con `docker compose up -d`. Las versiones disponibles están
-  en [Docker Hub](https://hub.docker.com/r/snomedinternational/snowstorm-lite/tags) y se
-  corresponden con los [releases del repo](https://github.com/IHTSDO/snowstorm-lite/releases).
-- **Persistencia dentro del volumen.** Como la imagen corre como uid 1000 pero `/app` es de
-  root, varias cosas que el servidor querría escribir en `/app` fallan con `AccessDenied`.
-  Por eso el compose redirige dos de ellas al volumen (que sí es escribible), así
-  **sobreviven a reinicios**:
-  - `--syndication.rf2-download-cache-directory=lucene-index/rf2-cache` — cache de zips RF2
-    descargados por sindicación.
-  - `--syndication.feed-config-file=lucene-index/syndication-feed-config.properties` — la
-    URL/credenciales del feed guardadas desde Settings.
-  Sin estos flags, esas descargas y la config del feed **se perderían** en cada reinicio.
+- The image is **pinned to `:2.5.2`** in the compose (reproducible for sharing). To update to
+  a newer version, change the tag in both `image:` lines of `docker-compose.yml` and recreate
+  with `docker compose up -d`. Available versions are on
+  [Docker Hub](https://hub.docker.com/r/snomedinternational/snowstorm-lite/tags) and match
+  the [repo releases](https://github.com/IHTSDO/snowstorm-lite/releases).
+- **Persistence inside the volume.** Because the image runs as uid 1000 but `/app` is
+  root-owned, several things the server would write to `/app` fail with `AccessDenied`. That's
+  why the compose redirects two of them to the volume (which is writable), so they **survive
+  restarts**:
+  - `--syndication.rf2-download-cache-directory=lucene-index/rf2-cache` — cache of RF2 zips
+    downloaded via syndication.
+  - `--syndication.feed-config-file=lucene-index/syndication-feed-config.properties` — the
+    feed URL/credentials saved from Settings.
+  Without these flags, those downloads and the feed config would be **lost** on every restart.

@@ -1,9 +1,9 @@
-# Tu archivo de entorno real: tiene credenciales, NO lo subas.
+# Your real env file: it holds credentials, do NOT commit it.
 snowstorm-lite.env
 snowstorm-lite.env.old
 
-# Zips RF2 cacheados si los copiaste del volumen con `docker cp ... ./rf2-cache`.
+# RF2 zips cached from the volume via `docker cp ... ./rf2-cache`.
 rf2-cache/
 
-# Archivos RF2 sueltos que hayas dejado al lado para la Opción B.
+# Loose RF2 files left alongside for Option B.
 *.zip

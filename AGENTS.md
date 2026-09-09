@@ -18,7 +18,10 @@ copiar/pegar — úsalos; este archivo te dice *cómo conducir el proceso*.
   Edition URI enlazados en el README) o derívalo de la edición/módulo que nombre el usuario,
   y confírmalo con él.
 - **Secretos:** el usuario elige su propio `ADMIN_PASSWORD`. No pidas credenciales MLDS a
-  menos que elija la Opción A, y nunca repitas contraseñas completas de vuelta.
+  menos que elija la Opción A, y nunca repitas contraseñas completas de vuelta. El usuario
+  puede entregarte un `snowstorm-lite.env` ya armado por él (útil en demos por pantalla
+  compartida): el stack lee las credenciales de ese archivo, así que **no le pidas que
+  revele las contraseñas en el chat** — basta con que el archivo exista en la carpeta.
 
 ## Paso 0 — Verificaciones previas (hazlas primero, antes que nada)
 Ejecuta e interpreta esto; resuelve lo que falle antes de continuar.

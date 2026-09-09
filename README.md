@@ -65,6 +65,18 @@ cp snowstorm-lite.env.example snowstorm-lite.env   # luego edítalo
 | `SYNDICATION_USERNAME` | opcional | Solo para descarga automática vía MLDS (Opción A) |
 | `SYNDICATION_PASSWORD` | opcional | Solo para descarga automática vía MLDS (Opción A) |
 
+> **Contraseñas en demos (pantalla compartida).** Prepara tú mismo tu `snowstorm-lite.env`
+> de antemano y en privado. Como el stack lee las credenciales de ese archivo (`env_file`),
+> durante una demo por Zoom **no necesitas escribir ni mostrar la contraseña de MLDS en
+> pantalla** — vive solo en el archivo; mantenlo cerrado mientras compartes pantalla. Si
+> además usas un asistente de IA, puedes entregarle el `.env` ya armado: no hace falta que
+> reveles las contraseñas en el chat.
+>
+> Salvedad: si vas a **instalar por el dashboard** (Opción A/C) y tu `ADMIN_PASSWORD` no
+> está vacía, el navegador la pedirá una vez (Basic Auth). Para no exponerla en la demo,
+> autentícate antes de compartir pantalla, o usa la vía por API (lee la contraseña del
+> archivo, no se escribe en pantalla).
+
 ## 3. Levanta el servidor
 ```bash
 docker compose up -d

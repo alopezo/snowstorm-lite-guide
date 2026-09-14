@@ -23,6 +23,20 @@ copiar/pegar — úsalos; este archivo te dice *cómo conducir el proceso*.
   compartida): el stack lee las credenciales de ese archivo, así que **no le pidas que
   revele las contraseñas en el chat** — basta con que el archivo exista en la carpeta.
 
+## Antes de empezar — ¿puedes ejecutar comandos aquí?
+Esta guía te hace (a ti, el asistente) ejecutar comandos locales (Docker, curl, editar
+archivos). Primero decide si este entorno realmente te deja ejecutar comandos de shell y
+llegar a la máquina del usuario.
+- **Si puedes** (eres **Claude Code** — la CLI `claude`, la pestaña **Code** de la app de
+  escritorio, o una extensión de IDE): confírmalo con `docker version` y sigue con el Paso 0.
+- **Si no puedes** (eres un chat común, sin ejecución de comandos): no puedes correr nada en
+  la máquina del usuario — no lo simules. Avísale y ofrécele dos caminos:
+  1. **Tú guías, él ejecuta:** le das cada comando y el usuario lo pega en su propia terminal
+     y te reporta la salida.
+  2. **Sin intervención (recomendado):** que abra esto en **Claude Code** — la pestaña
+     **Code** de la app de escritorio (o la CLI `claude`) — y pegue el mismo prompt inicial
+     ahí, para que el asistente ejecute todo por su cuenta.
+
 ## Paso 0 — Verificaciones previas (hazlas primero, antes que nada)
 Ejecuta e interpreta esto; resuelve lo que falle antes de continuar.
 

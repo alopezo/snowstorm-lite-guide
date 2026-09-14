@@ -17,6 +17,11 @@ y pregúntame lo que necesites (SO, credenciales MLDS / archivos / nada):
 https://github.com/alopezo/snowstorm-lite-guide
 ```
 
+Esto funciona mejor con un agente que pueda **ejecutar comandos** — como **Claude Code** (la
+pestaña **Code** de la app de escritorio, o la CLI `claude`). En un chat común sin acceso a
+comandos, el agente te guiará para que corras los comandos tú mismo, o te sugerirá abrir este
+repo en Claude Code para que los ejecute por ti.
+
 Si prefieres hacerlo a mano, sigue el resto de este README.
 
 ## Archivos

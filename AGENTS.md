@@ -24,6 +24,20 @@ you *how to drive the process*.
   from that file, so **don't ask them to reveal the passwords in chat** — it's enough that the
   file exists in the folder.
 
+## Before you begin — can you run commands here?
+This guide has you (the assistant) run local commands (Docker, curl, edit files). First
+decide whether this environment actually lets you execute local shell commands and reach the
+user's machine.
+- **If you can** (you're **Claude Code** — the `claude` CLI, the desktop app's **Code** tab,
+  or an IDE extension): confirm with `docker version` and continue with Step 0.
+- **If you can't** (you're a plain chat with no command/tool execution): you cannot run
+  anything on the user's machine — don't pretend to. Tell the user and offer two paths:
+  1. **You guide, they run:** you provide each command and the user pastes it into their own
+     terminal, reporting back the output.
+  2. **Hands-off (recommended):** the user opens this in **Claude Code** — the desktop app's
+     **Code** tab (or the `claude` CLI) — and pastes the same starter prompt there, so the
+     assistant runs everything itself.
+
 ## Step 0 — Preflight checks (do these first, before anything else)
 Run and interpret these; fix whatever fails before continuing.
 

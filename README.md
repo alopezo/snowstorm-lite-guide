@@ -19,6 +19,11 @@ national/language extensions, or self-contained editions).
 > https://github.com/alopezo/snowstorm-lite-guide/tree/english
 > ```
 >
+> This works best with an agent that can **run commands** — like **Claude Code** (the desktop
+> app's **Code** tab, or the `claude` CLI). In a plain chat with no command access, the agent
+> will either walk you through running the commands yourself, or suggest opening this repo in
+> Claude Code so it can run them for you.
+>
 > Prefer to do it by hand? Follow the rest of this README.
 
 ## Files

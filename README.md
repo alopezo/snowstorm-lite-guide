@@ -6,7 +6,7 @@ manual `chown`, no first-run crash. It works for **any SNOMED CT edition** (Inte
 national/language extensions, or self-contained editions).
 
 > 🌐 Spanish-language version of this guide (oriented to the Spanish edition): branch
-> [`main`](https://github.com/alopezo/snowstorm-lite-guide/tree/main).
+> [`spanish`](https://github.com/alopezo/snowstorm-lite-guide/tree/spanish).
 
 > **Got an AI agent? Start here.** Copy this and hand it to your agent (Claude Code, etc.).
 > It will read the instructions and **ask you what it needs** (your OS, whether you have MLDS
@@ -14,9 +14,9 @@ national/language extensions, or self-contained editions).
 >
 > ```
 > Help me install Snowstorm Lite step by step.
-> Clone/read this repo (english branch), follow AGENTS.md, run the preflight
-> checks and ask me what you need (OS, MLDS credentials / files / nothing):
-> https://github.com/alopezo/snowstorm-lite-guide/tree/english
+> Clone/read this repo, follow AGENTS.md, run the preflight checks
+> and ask me what you need (OS, MLDS credentials / files / nothing):
+> https://github.com/alopezo/snowstorm-lite-guide
 > ```
 >
 > This works best with an agent that can **run commands** — like **Claude Code** (the desktop
@@ -46,16 +46,16 @@ national/language extensions, or self-contained editions).
 - **Internet** to pull the image (~540 MB) and, for Options A/C, to reach the feed.
 
 ## 1. Get the files
-Clone the repo (this `english` branch):
+Clone the repo:
 ```bash
-git clone -b english https://github.com/alopezo/snowstorm-lite-guide.git
+git clone https://github.com/alopezo/snowstorm-lite-guide.git
 cd snowstorm-lite-guide
 ```
 No `git`? Download the ZIP from the repo page (**Code → Download ZIP**) and unzip it, or grab
 individual files by their *raw* URL, e.g.:
 ```bash
-curl -L -O https://raw.githubusercontent.com/alopezo/snowstorm-lite-guide/english/docker-compose.yml
-curl -L -O https://raw.githubusercontent.com/alopezo/snowstorm-lite-guide/english/snowstorm-lite.env.example
+curl -L -O https://raw.githubusercontent.com/alopezo/snowstorm-lite-guide/main/docker-compose.yml
+curl -L -O https://raw.githubusercontent.com/alopezo/snowstorm-lite-guide/main/snowstorm-lite.env.example
 ```
 (On Windows PowerShell use `curl.exe`.)
 

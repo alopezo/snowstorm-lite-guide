@@ -27,10 +27,22 @@ national/language extensions, or self-contained editions).
 >
 > Prefer to do it by hand? Follow the rest of this README.
 
-> **Want to learn while you install?** Ask the agent for *learning mode*, or to guide you
-> instead of doing it for you. It will explain its reasoning, let you run the steps yourself,
-> gradually ask for less as you get comfortable, and help you *understand* failures rather
-> than just fixing them — all on your real installation, with no separate tutorial.
+> **Want to learn while you install?** Use this prompt instead — it turns on *learning mode*:
+>
+> ```
+> Help me install Snowstorm Lite, and use learning mode: I want to understand it,
+> not just get it running.
+> Clone/read this repo and follow AGENTS.md (see "Learning mode").
+> Explain your reasoning, let me run the commands myself, ask for less help as I
+> get comfortable, and when something fails walk me through the diagnosis rather
+> than just fixing it:
+> https://github.com/alopezo/snowstorm-lite-guide
+> ```
+>
+> The agent explains what it's checking and why, lets you drive, gradually says less as you
+> get comfortable, and helps you *understand* failures — all on your real installation, with
+> no separate tutorial. Prefer to watch rather than type? Swap *"let me run the commands
+> myself"* for *"you run them, but explain as you go"*.
 
 ## Files
 | File | What it is |

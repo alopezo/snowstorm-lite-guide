@@ -38,6 +38,27 @@ user's machine.
      **Code** tab (or the `claude` CLI) — and pastes the same starter prompt there, so the
      assistant runs everything itself.
 
+## Ask what kind of help they want
+Before doing anything, ask the user how hands-on they want you to be, and then stick to that
+level. Offer these four:
+1. **Do everything, end to end** — you run all the commands *and* load the terminology
+   yourself, handing over a working, populated server. (Needs command execution.)
+2. **Set it up and hand off at the dashboard** — you install and start the stack, then stop at
+   http://localhost:8080 and let the user load the terminology themselves (e.g. pick the
+   edition under Syndication). (Needs command execution.)
+3. **Guide only — the user runs the commands** — you explain and give each command; the user
+   types it on their own machine and reports back the output. (Works in a plain chat too.)
+4. **Troubleshooting only** — the user already installed/attempted; you just help diagnose and
+   fix problems. Jump to the diagnostic playbook and ask what they're seeing.
+
+Notes:
+- If you can't run commands (plain chat), only 3 and 4 are possible — say so and default to 3.
+- The chosen level governs how you run the steps below: in levels 2–4 **don't silently run
+  steps the user wanted to do themselves** — in level 2 stop before loading the terminology;
+  in level 3 hand each command to the user instead of running it; in level 4 skip setup unless
+  asked.
+- You can always switch levels if the user changes their mind.
+
 ## Step 0 — Preflight checks (do these first, before anything else)
 Run and interpret these; fix whatever fails before continuing.
 

@@ -9,8 +9,9 @@ national/language extensions, or self-contained editions).
 > [`spanish`](https://github.com/alopezo/snowstorm-lite-guide/tree/spanish).
 
 > **Got an AI agent? Start here.** Copy this and hand it to your agent (Claude Code, etc.).
-> It will read the instructions and **ask you what it needs** (your OS, whether you have MLDS
-> credentials, files, or nothing) and guide you step by step:
+> It will read the instructions, **ask how hands-on you want it** (do everything · set it up
+> and hand off at the dashboard · just guide you while you type · only troubleshoot) and what
+> it needs (your OS, whether you have MLDS credentials, files, or nothing), then guide you:
 >
 > ```
 > Help me install Snowstorm Lite step by step.

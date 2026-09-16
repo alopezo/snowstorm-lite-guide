@@ -134,14 +134,15 @@ Run and interpret these; fix whatever fails before continuing.
    If it errors, the user must install/start Docker Desktop (macOS/Windows) or the Docker
    Engine (Linux) first.
 
-2. **Enough memory for the JVM (critical).** The app runs with `-Xmx4g`, so Docker needs
-   ~5–6 GB available or the import gets **OOM-killed**. Check what Docker has:
+2. **Enough memory for the JVM.** The app caps the JVM at `-Xmx4g`, which already leaves
+   headroom, so **about 4 GB given to Docker is normally enough**. Check what Docker has:
    ```bash
    docker info --format '{{.MemTotal}}'
    ```
-   If it's below ~5000000000 (5 GB), tell the user to raise Docker Desktop's memory
-   (Settings → Resources → Memory) before loading a terminology. It's the most common
-   real-world failure — check it up front.
+   If it's well below ~4000000000 (4 GB), tell the user to raise Docker Desktop's memory
+   (Settings → Resources → Memory) before loading a terminology. Don't over-demand memory up
+   front — if an import does get **OOM-killed** later, that's a good teachable moment: walk
+   the diagnosis (see the diagnostic playbook) and then raise the limit.
 
 3. **Port 8080 free** (or plan to change the host port in the compose if it isn't).
 
@@ -209,7 +210,7 @@ how many files.
 ## Diagnostic playbook (symptom → likely cause → action)
 | Symptom | Likely cause | Action |
 |---------|--------------|--------|
-| Container exits during import; exit code 137; `OOMKilled=true` | Not enough memory for `-Xmx4g` | Raise Docker Desktop memory to ≥ 5–6 GB and retry. Check: `docker inspect snowstorm-lite --format '{{.State.OOMKilled}} {{.State.ExitCode}}'` |
+| Container exits during import; exit code 137; `OOMKilled=true` | Not enough memory for `-Xmx4g` | Raise Docker Desktop memory (4 GB is usually enough; give it more) and retry. Check: `docker inspect snowstorm-lite --format '{{.State.OOMKilled}} {{.State.ExitCode}}'` |
 | `bind: address already in use` on 8080 | Port taken | Change the host port in the compose (e.g. `"8081:8080"`) and use that port |
 | `java.nio.file.AccessDeniedException: /app/lucene-index/data` | Ran `docker run` by hand, skipping the init | Use `docker compose up -d` (fixes volume ownership) |
 | Feed 404 / `.../feed/feed` | Entered the feed URL **with** `/feed` | Use the base URL without `/feed` |

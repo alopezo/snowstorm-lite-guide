@@ -27,22 +27,10 @@ national/language extensions, or self-contained editions).
 >
 > Prefer to do it by hand? Follow the rest of this README.
 
-> **Want to learn while you install?** Use this prompt instead — it turns on *learning mode*:
->
-> ```
-> Help me install Snowstorm Lite, and use learning mode: I want to understand it,
-> not just get it running.
-> Clone/read this repo and follow AGENTS.md (see "Learning mode").
-> Explain your reasoning, let me run the commands myself, ask for less help as I
-> get comfortable, and when something fails walk me through the diagnosis rather
-> than just fixing it:
-> https://github.com/alopezo/snowstorm-lite-guide
-> ```
->
-> The agent explains what it's checking and why, lets you drive, gradually says less as you
-> get comfortable, and helps you *understand* failures — all on your real installation, with
-> no separate tutorial. Prefer to watch rather than type? Swap *"let me run the commands
-> myself"* for *"you run them, but explain as you go"*.
+> **Want to learn while you install?** Just tell the agent so — ask for *learning mode*, or to
+> guide you instead of doing it for you. It will explain its reasoning, let you run the steps
+> yourself, gradually ask for less as you get comfortable, and help you *understand* failures
+> rather than just fixing them — all on your real installation, with no separate tutorial.
 
 ## Files
 | File | What it is |
@@ -56,9 +44,10 @@ national/language extensions, or self-contained editions).
 ## Prerequisites
 - **Docker** installed and running (Docker Desktop on macOS/Windows, Docker Engine on
   Linux). Check with `docker version`.
-- **Memory:** the server runs the JVM with `-Xmx4g`, so give Docker **~5–6 GB** or more
-  (Docker Desktop → Settings → Resources → Memory). With less, loading a terminology gets
-  **OOM-killed** mid-import. This is the most common failure — set it before you start.
+- **Memory:** give Docker at least **4 GB** (Docker Desktop → Settings → Resources → Memory).
+  The server caps the JVM at `-Xmx4g`, which already leaves headroom, so 4 GB is normally
+  enough. With noticeably less, loading a terminology gets **OOM-killed** mid-import — if that
+  happens, raise it (see Troubleshooting).
 - **Disk:** a few GB free (Lucene index + any downloaded RF2 zips).
 - **Port 8080** free (or change the host port in the compose).
 - **Internet** to pull the image (~540 MB) and, for Options A/C, to reach the feed.
@@ -286,7 +275,7 @@ image.
 ## Troubleshooting
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Container exits mid-import; exit code 137 | Not enough memory for `-Xmx4g` | Raise Docker memory to ≥ 5–6 GB and retry. Check: `docker inspect snowstorm-lite --format '{{.State.OOMKilled}} {{.State.ExitCode}}'` |
+| Container exits mid-import; exit code 137 | Not enough memory for `-Xmx4g` | Raise Docker memory (4 GB is usually enough; give it more) and retry. Check: `docker inspect snowstorm-lite --format '{{.State.OOMKilled}} {{.State.ExitCode}}'` |
 | `bind: address already in use` (8080) | Port taken | Change the host port in the compose, e.g. `"8081:8080"` |
 | `AccessDeniedException: /app/lucene-index/data` | Started with `docker run` by hand, skipping the init step | Use `docker compose up -d` (it fixes volume ownership) |
 | Feed 404 / `.../feed/feed` | Feed URL entered **with** `/feed` | Use the base URL **without** `/feed` |

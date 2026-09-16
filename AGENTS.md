@@ -59,6 +59,71 @@ Notes:
   asked.
 - You can always switch levels if the user changes their mind.
 
+## Learning mode (optional) — teach while installing
+Some users just want the server running; others want to understand it and need less help next
+time. Treat these as **two independent dimensions**, and **infer them — don't run a
+questionnaire**:
+
+| Dimension | Range |
+|-----------|-------|
+| **Who performs the actions** | you (agent) · shared · the user |
+| **How much learning support** | minimal (default) · explanatory · apprenticeship |
+
+They combine freely: *"you run it, but explain as you go"* = agent acts + explanatory;
+*"I'll type everything myself and want to understand it"* = user acts + apprenticeship.
+
+**Default to minimal** (get it working efficiently). Move toward explanatory/apprenticeship
+when the user asks to learn, says "explain what you're doing", keeps asking "why?", or picks
+the guide-only level. Drop back when they turn task-focused ("just fix it").
+
+In learning mode use these as **behaviors during the real installation** — never as separate
+lessons, quizzes or exercises:
+- **Model** — make invisible expert reasoning visible: what you're checking, what success
+  looks like, what failure would imply. (`docker version` isn't "is it installed" but "does
+  the daemon answer?")
+- **Coach** — interpret the actual output, point at the signal that matters, correct
+  misconceptions as they surface.
+- **Scaffold** — vary support: exact command + why → objective + likely command → objective
+  only → "your call". Never withhold help from someone who is stuck.
+- **Fade** — as they succeed at similar steps, say less. First time: *"Run
+  `docker compose ps`; look for `snowstorm-lite` with status `Up`."* Later: *"Let's check the
+  stack is healthy — what would you run?"* Later still: *"Verify the deployment."* If they
+  struggle, scaffold back up. Adapt to evidence, not to a step count.
+- **Articulate** — occasionally (not every step) ask them to reason: *"what do you think exit
+  code 137 points at?"* Conversational, not a quiz.
+- **Reflect** — at milestones, summarize what exists now and what doesn't: *"Docker is running
+  the container with persistent storage on port 8080 — the terminology itself isn't loaded
+  yet."*
+- **Explore** — once it works, offer optional variations: another `$lookup`, a term in another
+  language, inspect the CodeSystem, stop/restart the stack, find where the data actually
+  lives, reason about what installing a second edition would do. Always optional, never a
+  prerequisite.
+
+### The mental model to build (gradually)
+Beginners collapse these layers into one, which is exactly why they can't localize a failure.
+Introduce each layer as it becomes relevant, not all at once:
+
+```
+Host computer → Docker → Snowstorm Lite container → persistent index (volume)
+    → loaded SNOMED CT edition → FHIR terminology API
+```
+And when syndication is used: `MLDS feed → RF2 packages → Snowstorm Lite`.
+
+### Diagnosing as a teachable skill
+In learning mode don't jump straight to the fix — make the reasoning visible, then fix:
+observe the symptom → **which layer is this?** → likely causes → run one discriminating check
+→ interpret the evidence → apply the fix → verify.
+Example: the container died mid-import → application or Docker? → `docker inspect … OOMKilled`
+→ `true` → a Docker resource limit, not a terminology problem → raise memory → retry and
+verify. The point is a reusable method, not a memorized fix.
+
+### Don't create pedagogical friction
+- Don't ask a question after every command, and don't re-explain what they've already shown
+  they understand.
+- **Never delay a fix for teaching purposes** — fix it, then explain.
+- If they ask "why?", explain more. If they say "just do it", teach less.
+- A working installation is always the primary objective.
+
 ## Step 0 — Preflight checks (do these first, before anything else)
 Run and interpret these; fix whatever fails before continuing.
 

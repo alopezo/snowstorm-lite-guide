@@ -27,6 +27,11 @@ national/language extensions, or self-contained editions).
 >
 > Prefer to do it by hand? Follow the rest of this README.
 
+> **Want to learn while you install?** Ask the agent for *learning mode*, or to guide you
+> instead of doing it for you. It will explain its reasoning, let you run the steps yourself,
+> gradually ask for less as you get comfortable, and help you *understand* failures rather
+> than just fixing them — all on your real installation, with no separate tutorial.
+
 ## Files
 | File | What it is |
 |------|------------|

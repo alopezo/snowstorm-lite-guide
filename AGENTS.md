@@ -28,14 +28,15 @@ you *how to drive the process*.
 This guide has you (the assistant) run local commands (Docker, curl, edit files). First
 decide whether this environment actually lets you execute local shell commands and reach the
 user's machine.
-- **If you can** (you're **Claude Code** — the `claude` CLI, the desktop app's **Code** tab,
-  or an IDE extension): confirm with `docker version` and continue with Step 0.
+- **If you can** (you're a coding agent with shell access — Claude Code, Codex, or similar,
+  via a CLI, a desktop app or an IDE extension): confirm with `docker version` and continue
+  with Step 0.
 - **If you can't** (you're a plain chat with no command/tool execution): you cannot run
   anything on the user's machine — don't pretend to. Tell the user and offer two paths:
   1. **You guide, they run:** you provide each command and the user pastes it into their own
      terminal, reporting back the output.
-  2. **Hands-off (recommended):** the user opens this in **Claude Code** — the desktop app's
-     **Code** tab (or the `claude` CLI) — and pastes the same starter prompt there, so the
+  2. **Hands-off (recommended):** the user opens this in a coding agent that can run commands
+     (Claude Code, Codex, or similar) and pastes the same starter prompt there, so the
      assistant runs everything itself.
 
 ## Ask what kind of help they want
@@ -146,6 +147,25 @@ Run and interpret these; fix whatever fails before continuing.
 
 3. **Port 8080 free** (or plan to change the host port in the compose if it isn't).
 
+4. **MLDS credentials, if there are any (do this whenever `SYNDICATION_*` is set in the env
+   — whatever loading option they end up choosing).** Catch a bad password now, not halfway
+   through a download or on their first click in the dashboard.
+
+   > ⚠️ Listing editions does **not** validate credentials — the feed listing answers even
+   > with a wrong password; only the package download is authenticated. Check a download URL
+   > with `HEAD`, which authenticates without downloading anything:
+
+   ```bash
+   URL=$(curl -s -u "$SYNDICATION_USERNAME:$SYNDICATION_PASSWORD" \
+         https://mlds.ihtsdotools.org/api/feed | grep -oE 'https://[^"]*/download' | head -1)
+   curl -s -o /dev/null -I -w '%{http_code}\n' \
+         -u "$SYNDICATION_USERNAME:$SYNDICATION_PASSWORD" "$URL"
+   # 200 = credentials work · 401 = they don't
+   ```
+   On **401**, fix it before going further: the value must be **literal** in the `.env` (no
+   quotes, no `\` escapes), then `docker compose up -d` to re-read it. Skip this check
+   entirely if they aren't using MLDS.
+
 ## Step 1 — Get the files and start the stack
 Guide the user through the README sections "Get the files", "Configure your env file" and
 "Start the server". Key points:
@@ -157,8 +177,9 @@ Guide the user through the README sections "Get the files", "Configure your env 
   *"Snowstorm Lite started. Please load a SNOMED CT package."*
 
 ## Step 2 — Choose how to load the terminology (ask the user)
-Ask: **"Do you have (A) MLDS credentials, (B) the RF2 files already, or (C) nothing — just
-want to test?"** Then follow the matching option in the README. Also ask **which edition**
+Ask: **"Do you have (A) MLDS credentials, (B) the RF2 files already, (C) nothing — just want
+to test, or (D) would you rather pick the edition yourself in the dashboard later?"** Then
+follow the matching option in the README. Also ask **which edition**
 they want (International, a national/language edition, etc.) — it drives the `version-uri` and
 how many files.
 
@@ -166,7 +187,8 @@ how many files.
 > **replaces** the previous one. Warn the user before loading anything if they already have an
 > edition they want to keep.
 - **A — MLDS syndication:** put `SYNDICATION_*` in the env and `docker compose up -d` again to
-  apply. Then **ask the user how they want to trigger the load**: (1) via the **dashboard** —
+  apply — then **verify the credentials (Step 0.4) before starting any download**. Then
+  **ask the user how they want to trigger the load**: (1) via the **dashboard** —
   recommended and simplest; most people prefer this —, or (2) you trigger it via the admin
   API. **By default steer them to the dashboard and just help them open the app:** have them
   open http://localhost:8080, go to **Syndication**, pick the edition they want and click
@@ -194,6 +216,13 @@ how many files.
   test data). **The dashboard discovers editions without credentials, but the Install button
   is an admin action**: the browser will prompt for the admin Basic Auth (use the
   `ADMIN_USERNAME`/`ADMIN_PASSWORD` from the env). The dashboard has no login of its own.
+- **D — Load nothing for now:** a perfectly good ending. The user will pick the edition in the
+  dashboard whenever they want. If they use MLDS, make sure you ran the credential check
+  (Step 0.4) — the whole point of this ending is that they can click *Install* later and have
+  it just work. Hand off saying the server is ready *and* their credentials were verified, so
+  they can pick an edition under Syndication whenever they like. If they never configured
+  MLDS, hand off with the demo feed set up (Option C) or with nothing, stating plainly what's
+  still missing to load content.
 
 ## Step 3 — Confirm success
 - That a CodeSystem is loaded:
@@ -206,6 +235,26 @@ how many files.
   ```
   For a language edition, add `&displayLanguage=<lang>` to check terms in that language (e.g.
   `es` → "asma"). Then hand off the FHIR base http://localhost:8080/fhir.
+
+## Step 4 — Hand off (offer, don't lecture)
+When it works, close the loop in a few lines: say **what they now have** (server running,
+which edition is loaded — or none yet, dashboard at http://localhost:8080, FHIR base at
+`/fhir`). Then **offer a short menu and let them choose** — most people want to poke at it
+themselves:
+- **Explore concepts** → *SNOMED Mini Browser* in the dashboard (no credentials needed — the
+  easiest first thing to try).
+- **Build a ValueSet** → *FHIR Resources → ValueSet → Add ValueSet*, with the ECL builder
+  (concept typeahead, operators, expansion preview).
+- **Query it from code** → the FHIR base, `$lookup`, `$expand`, `$validate-code`, `$subsumes`.
+- **Load a different edition** → *Syndication* (⚠️ replaces the current one).
+
+Ask **"want me to walk you through any of it, or would you rather explore?"** and only guide
+if they say yes. Don't tour the dashboard unprompted.
+
+> Worth saying once, because it trips everyone: in the dashboard **reading works without
+> credentials, but writing is an admin action** — installing an edition, saving a ValueSet or
+> changing Settings all trigger the browser's Basic Auth prompt (`ADMIN_USERNAME` /
+> `ADMIN_PASSWORD`). The dashboard has no login of its own.
 
 ## Diagnostic playbook (symptom → likely cause → action)
 | Symptom | Likely cause | Action |

@@ -12,14 +12,14 @@
 services:
   # Runs once as root, fixes the volume ownership, and exits.
   init-permissions:
-    image: snomedinternational/snowstorm-lite:2.5.2
+    image: snomedinternational/snowstorm-lite:2.7.0
     user: "0:0"
     entrypoint: ["sh", "-c", "chown -R 1000:1000 /app/lucene-index"]
     volumes:
       - snowstorm-lite-volume:/app/lucene-index
 
   snowstorm-lite:
-    image: snomedinternational/snowstorm-lite:2.5.2
+    image: snomedinternational/snowstorm-lite:2.7.0
     container_name: snowstorm-lite
     depends_on:
       init-permissions:

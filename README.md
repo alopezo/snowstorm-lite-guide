@@ -8,7 +8,8 @@ national/language extensions, or self-contained editions).
 > 🌐 Spanish-language version of this guide (oriented to the Spanish edition): branch
 > [`spanish`](https://github.com/alopezo/snowstorm-lite-guide/tree/spanish).
 
-> **Got an AI agent? Start here.** Copy this and hand it to your agent (Claude Code, etc.).
+> **Got an AI agent? Start here.** Copy this and hand it to your agent (Claude Code, Codex,
+> or similar).
 > It will read the instructions, **ask how hands-on you want it** (do everything · set it up
 > and hand off at the dashboard · just guide you while you type · only troubleshoot) and what
 > it needs (your OS, whether you have MLDS credentials, files, or nothing), then guide you:
@@ -20,10 +21,10 @@ national/language extensions, or self-contained editions).
 > https://github.com/alopezo/snowstorm-lite-guide
 > ```
 >
-> This works best with an agent that can **run commands** — like **Claude Code** (the desktop
-> app's **Code** tab, or the `claude` CLI). In a plain chat with no command access, the agent
-> will either walk you through running the commands yourself, or suggest opening this repo in
-> Claude Code so it can run them for you.
+> This works best with an agent that can **run commands** on your machine — a coding agent
+> such as Claude Code, Codex or similar, in a CLI, desktop app or IDE extension. In a plain
+> chat with no command access, the agent will either walk you through running the commands
+> yourself, or suggest opening this repo in such an agent so it can run them for you.
 >
 > Prefer to do it by hand? Follow the rest of this README.
 
@@ -123,6 +124,12 @@ There are **three ways** to load content. Pick the one that matches what you hav
 | the RF2 files | **Option B** — upload the local files directly | no |
 | nothing (just testing) | **Option C** — free demo feed (IPS test data) | no |
 
+> **Or none of them, for now.** Finishing the install *without* loading anything is a valid
+> ending: the server runs and you pick an edition in the dashboard whenever you want (see
+> [Using the dashboard](#using-the-dashboard)). If you plan to use MLDS, run the
+> [credential check](#check-your-mlds-credentials-first) before you stop, so your first click
+> on *Install* doesn't fail.
+
 > **Important:** Snowstorm Lite holds **one SNOMED CT edition at a time**. Loading or
 > installing another edition **replaces** whatever was loaded (the index is overwritten).
 
@@ -132,6 +139,23 @@ For downloading a real SNOMED CT edition. Put your MLDS credentials in the env f
 SYNDICATION_USERNAME=your-mlds-username
 SYNDICATION_PASSWORD=your-mlds-password
 ```
+
+#### Check your MLDS credentials first
+Do this before any download — it fails fast and costs nothing.
+
+> ⚠️ **Listing editions is not a credential check.** The feed listing answers even with a
+> wrong password; only the package download is authenticated. Use `HEAD` on a download URL,
+> which authenticates **without downloading anything**:
+
+```bash
+URL=$(curl -s -u "$SYNDICATION_USERNAME:$SYNDICATION_PASSWORD" \
+      https://mlds.ihtsdotools.org/api/feed | grep -oE 'https://[^"]*/download' | head -1)
+curl -s -o /dev/null -I -w '%{http_code}\n' -u "$SYNDICATION_USERNAME:$SYNDICATION_PASSWORD" "$URL"
+# 200 = credentials work · 401 = they don't
+```
+On `401`, the usual cause is the password not being **literal** in the `.env` (see
+Troubleshooting); fix it and re-run `docker compose up -d`.
+
 Then, in the dashboard choose **Syndication** and select the edition you want. Multi-package
 editions (e.g. a national or language edition = International + extension) are downloaded and
 loaded **automatically**.
@@ -230,9 +254,10 @@ Patient Summary)**. It's for checking that the install works — just test data.
    > `.../feed/feed` and get a 404.
 3. Refresh, open the **Syndication** menu, and install the **IPS Terminology Test** edition.
 
-> **Note on authentication:** the dashboard **discovers** editions without credentials, but
-> **installing** is an admin action — the browser will prompt for the admin
-> username/password (Basic Auth). Use the `ADMIN_USERNAME`/`ADMIN_PASSWORD` from the env.
+> **Note on authentication:** in the dashboard, **reading works without credentials, but
+> writing is an admin action** — installing an edition, saving a ValueSet or changing Settings
+> all trigger the browser's Basic Auth prompt. Use the `ADMIN_USERNAME`/`ADMIN_PASSWORD` from
+> the env. The dashboard has no login of its own, so the prompt is the only way in.
 
 Demo feed source: <https://github.com/alopezo/snomed-demo-feed>. For testing/evaluation only
 — not production content. Installing the IPS **replaces** whatever edition you had loaded
@@ -258,6 +283,23 @@ curl -s "http://localhost:8080/fhir/CodeSystem/\$lookup?system=http://snomed.inf
   | jq -r '.parameter[] | select(.name=="display") | .valueString'
 ```
 The FHIR interface is at http://localhost:8080/fhir
+
+## Using the dashboard
+Once the server is up, http://localhost:8080 gives you four areas. You don't need any of them
+to use the FHIR API — they're a convenience.
+
+| Section | What it's for | Needs admin login? |
+|---------|----------------|--------------------|
+| **FHIR Resources** | Browse the loaded CodeSystem, ValueSets and ConceptMaps. Includes the **ValueSet editor**: build a compose with includes/excludes, an **ECL builder** (concept typeahead, operators, example templates) and an expansion preview before saving. | Reading no · **creating/editing yes** |
+| **Syndication** | Install an edition from the feed, or switch editions. | **Yes** (⚠️ replaces the loaded edition) |
+| **SNOMED Mini Browser** | Search and explore concepts — the quickest way to check the load looks right. | No |
+| **Settings** | Feed URL and credentials, and the FHIR server the dashboard talks to. | **Yes** |
+
+> **The one gotcha:** reads are open, **writes need the admin Basic Auth prompt** — so
+> *Install* and *Add ValueSet* will fail with a `401` until you authenticate in the browser
+> with `ADMIN_USERNAME`/`ADMIN_PASSWORD`. The dashboard has no login screen of its own.
+
+The dashboard is in beta and changes between releases; the FHIR API is the stable interface.
 
 ## Managing the stack
 ```bash

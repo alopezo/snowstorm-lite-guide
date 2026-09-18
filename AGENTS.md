@@ -177,32 +177,34 @@ Guide the user through the README sections "Get the files", "Configure your env 
   *"Snowstorm Lite started. Please load a SNOMED CT package."*
 
 ## Step 2 — Choose how to load the terminology (ask the user)
-Ask: **"Do you have (A) MLDS credentials, (B) the RF2 files already, (C) nothing — just want
-to test, or (D) would you rather pick the edition yourself in the dashboard later?"** Then
-follow the matching option in the README. Also ask **which edition**
-they want (International, a national/language edition, etc.) — it drives the `version-uri` and
-how many files.
+Ask: **"Do you have (A) MLDS credentials, (B) the RF2 files already, or (C) nothing — just
+want to test?"** Then follow the matching option in the README.
 
 > **Heads up:** Snowstorm Lite holds **one edition at a time** — loading/installing another
 > **replaces** the previous one. Warn the user before loading anything if they already have an
 > edition they want to keep.
-- **A — MLDS syndication:** put `SYNDICATION_*` in the env and `docker compose up -d` again to
-  apply — then **verify the credentials (Step 0.4) before starting any download**. Then
-  **ask the user how they want to trigger the load**: (1) via the **dashboard** —
-  recommended and simplest; most people prefer this —, or (2) you trigger it via the admin
-  API. **By default steer them to the dashboard and just help them open the app:** have them
-  open http://localhost:8080, go to **Syndication**, pick the edition they want and click
-  install. Use the API only if they explicitly ask. Multi-package editions (edition +
-  dependencies) load automatically. (Remember: installing needs admin auth in the browser —
-  see Option C.) If you CAN'T drive a browser (you're a CLI agent), say so and offer either:
-  give the exact dashboard clicks for them to do (there are few), or trigger the load via the
-  admin API (`POST /syndication/install` with `{editionId, version,
-  derivativeContentItemVersions:[]}`) and follow progress with
-  `GET /syndication/install/{taskId}`. Don't invent the `editionId`/`version`: first list the
-  feed's real editions (`GET /syndication/snomed-editions`) and choose with the user. MLDS
-  usually offers many candidates (International, language packages such as the SNOMED CT
-  Spanish package `450829007`, and separate national editions like Argentina/Uruguay) —
-  confirm which one they want before installing.
+
+- **A — MLDS syndication.** Put `SYNDICATION_*` in the env, `docker compose up -d` again to
+  apply, and **verify the credentials (Step 0.4) before any download**. Then offer two ways to
+  finish — ask which they prefer:
+
+  - **A.1 — You load it now.** First ask **which edition** they want, and never guess: list
+    the feed's real editions (`GET /syndication/snomed-editions`) and choose together. MLDS
+    offers many candidates — the International Edition, language packages such as the SNOMED
+    CT Spanish package (`450829007`), and separate national editions like Argentina or
+    Uruguay. Then trigger it yourself: `POST /syndication/install` with
+    `{editionId, version, derivativeContentItemVersions: []}`, and follow
+    `GET /syndication/install/{taskId}` until `COMPLETED` (a few minutes; multi-package
+    editions pull their dependencies automatically). Hand over a populated server.
+  - **A.2 — They load it in the dashboard.** Point them at http://localhost:8080 →
+    **Syndication**, where they pick the edition and click install. This is a perfectly good
+    ending: the server is ready and, because you checked the credentials, their first click
+    will work. Mention that installing prompts for the admin Basic Auth, and that it replaces
+    any edition already loaded. Don't click through it for them unless they ask — this is the
+    natural landing for help level 2.
+
+  If you can't drive a browser (you're a CLI agent) and they still want A.2, give them the
+  exact clicks rather than doing it for them.
 - **B — Local RF2 files:** upload them with the `load-package` curl. Upload the **whole
   dependency chain in a single call**, with the top edition's `version-uri`. How many files:
   **1** for the International Edition alone; **2** for a common extension (International + the
@@ -216,13 +218,10 @@ how many files.
   test data). **The dashboard discovers editions without credentials, but the Install button
   is an admin action**: the browser will prompt for the admin Basic Auth (use the
   `ADMIN_USERNAME`/`ADMIN_PASSWORD` from the env). The dashboard has no login of its own.
-- **D — Load nothing for now:** a perfectly good ending. The user will pick the edition in the
-  dashboard whenever they want. If they use MLDS, make sure you ran the credential check
-  (Step 0.4) — the whole point of this ending is that they can click *Install* later and have
-  it just work. Hand off saying the server is ready *and* their credentials were verified, so
-  they can pick an edition under Syndication whenever they like. If they never configured
-  MLDS, hand off with the demo feed set up (Option C) or with nothing, stating plainly what's
-  still missing to load content.
+
+**Finishing with nothing loaded is always allowed**, whatever they picked — the server runs
+fine empty and they can load content later. Just say plainly what's missing to get content in
+(credentials verified and an edition to choose, files to upload, or the demo feed configured).
 
 ## Step 3 — Confirm success
 - That a CodeSystem is loaded:

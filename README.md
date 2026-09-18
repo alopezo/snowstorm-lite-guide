@@ -156,6 +156,12 @@ curl -s -o /dev/null -I -w '%{http_code}\n' -u "$SYNDICATION_USERNAME:$SYNDICATI
 On `401`, the usual cause is the password not being **literal** in the `.env` (see
 Troubleshooting); fix it and re-run `docker compose up -d`.
 
+#### Two ways to finish
+Once the credentials check out, either:
+- **load it now** — pick the edition in the dashboard (below) or trigger it via the API, or
+- **stop here** — the server is ready and whoever uses it picks the edition in
+  *Syndication* later. Because the credentials are verified, that first click will work.
+
 Then, in the dashboard choose **Syndication** and select the edition you want. Multi-package
 editions (e.g. a national or language edition = International + extension) are downloaded and
 loaded **automatically**.

@@ -308,47 +308,59 @@ to use the FHIR API — they're a convenience.
 The dashboard is in beta and changes between releases; the FHIR API is the stable interface.
 
 ## Search ranking and paging (advanced)
-A **filtered** `$expand` (`ValueSet/$expand?...&filter=asthma`) ranks in two passes:
+A **filtered** `$expand` (`ValueSet/$expand?...&filter=cancer`) ranks in two passes:
 
 1. **Lucene** returns matches ordered by *active first*, then *shortest PT+FSN*, then score.
-2. **Java re-sorts** that first window by the *shortest description matching your filter*,
-   mirroring how full Snowstorm ranks. This pass only runs when `offset < 100`.
+2. **Java re-sorts** that window by the *shortest description matching your filter*, mirroring
+   how full Snowstorm ranks. This pass only runs when `offset < 100`.
 
-How many documents reach pass 2 is tunable (added in 2.5.2):
+Only the first *window* of documents reaches pass 2, and that window is tunable (since 2.5.2):
 
 ```properties
 search.valueset-expand.relevance-sort-window=250   # default
 ```
 
-Fixing this window is what makes page 1 **stable**: previously the candidate set was
-`offset + count`, so asking for a bigger page could change the top result. Verified on 2.7.0 —
-the first hit for `filter=diabetes` is identical at `count=1, 10, 50 and 200`.
+### Recommended: raise it to 10000
+The default is small enough that the matches people actually want never reach the re-sort.
+Measured on 2.7.0, `filter=cancer` (2332 matches):
 
-### The catch: while `offset < 100`, a page is capped at `window − offset`
-Verified on 2.7.0 against an edition with 1118 matches for `filter=diabetes`:
+| Window | Top 5 results |
+|--------|---------------|
+| **250** (default) | `R0 (AJCC)` · `R1 (AJCC)` · `R2 (AJCC)` · `RX (AJCC)` · `aM0 (AJCC)` |
+| **10000** | `Malignant neoplasm` · `Malignant neoplastic disease` · `Malignant neoplastic disease (primary)` · `Neoplasm, malignant (primary)` · `(Neoplasms) or (cancers)` |
 
-| Request | Rows returned |
-|---------|---------------|
-| `offset=0&count=250` | 250 |
-| `offset=0&count=300` | **250** |
-| `offset=90&count=200` | **160** |
-| `offset=99&count=200` | **151** |
-| `offset=100&count=200` | 200 — re-sort is skipped, plain Lucene order |
+The AJCC staging codes win with a small window because their concept names are very short; the
+concepts a clinician expects sit further down Lucene's list and never enter the candidate set.
+`diabetes` and `tumor` improve too.
 
-`expansion.total` still reports the true total, so the short page is **silent**. Two things
-follow:
-- **Keep filtered pages within `250 − offset`**, or raise the window.
-- **Ordering changes at `offset = 100`.** From there results come back in plain Lucene order,
-  so a concept can repeat or be missed across that boundary. Paging in 50s, pages 1–2 are
-  re-sorted and page 3 is not.
-
-To raise it, add the property as a flag in `docker-compose.yml`:
+**This compose already sets it:**
 ```yaml
-      - "--search.valueset-expand.relevance-sort-window=1000"
+      - "--search.valueset-expand.relevance-sort-window=10000"
 ```
-A bigger window means better ranking (a concept with a short synonym but a long PT/FSN can
-still reach the top) and larger allowed pages, at the cost of reading more documents per
-search. Unfiltered expansions and `offset >= 100` are unaffected.
+Running the jar directly instead of Docker, pass the same flag:
+```bash
+java -jar target/snowstorm-lite-2.8.0-SNAPSHOT.jar --search.valueset-expand.relevance-sort-window=10000
+```
+
+**Cost:** a typical filtered search (`count=50`) measured ~18 ms at 250 and ~63 ms at 10000 on
+a laptop — more documents read per search, still comfortably fast.
+
+### It also removes a silent paging cap
+On the **default** window, while `offset < 100` a page can never return more than
+`window − offset` rows. Verified on 2.7.0 with 1118 matches for `filter=diabetes`:
+
+| Request | window 250 | window 10000 |
+|---------|-----------|--------------|
+| `offset=0&count=300` | **250** | 300 |
+| `offset=0&count=1000` | **250** | 1000 |
+| `offset=90&count=200` | **160** | 200 |
+| `offset=99&count=200` | **151** | 200 |
+| `offset=100&count=200` | 200 | 200 — re-sort skipped, plain Lucene order |
+
+`expansion.total` still reports the true total, so a short page is **silent**. Note that
+ordering still changes at `offset = 100` (the re-sort stops), so a concept can repeat or be
+missed across that boundary — if you page in 50s, pages 1–2 are re-sorted and page 3 is not.
+Unfiltered expansions are unaffected by all of this.
 
 ## Managing the stack
 ```bash

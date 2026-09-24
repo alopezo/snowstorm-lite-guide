@@ -265,7 +265,7 @@ if they say yes. Don't tour the dashboard unprompted.
 | Option B: import fails / concepts missing | Incomplete file set or wrong `version-uri` | Upload the whole dependency chain (e.g. include International with the extension); verify the `version-uri` |
 | `401` on `load-package` | Wrong admin credentials | Use the `ADMIN_USERNAME`/`ADMIN_PASSWORD` from the env |
 | Option A: listing MLDS editions works but the **ZIP download** returns `401` | `SYNDICATION_PASSWORD` with quotes or a `\` escape in the `.env` (taken literally) | Fix to the literal value (e.g. `*` not `\*`), recreate the container and retry |
-| A **filtered** `$expand` returns fewer rows than `count` (only when `offset < 100`) | The relevance-sort window (250) caps a page at `window − offset`; `total` still shows the real count | Keep `count` within `250 − offset`, or raise `--search.valueset-expand.relevance-sort-window` in the compose |
+| A **filtered** `$expand` returns fewer rows than `count` (only when `offset < 100`) | The relevance-sort window (250) caps a page at `window − offset`; `total` still shows the real count | This compose ships `--search.valueset-expand.relevance-sort-window=10000`, which removes the cap — check the flag wasn't dropped; on the default (250) keep `count` within `250 − offset` |
 | Image pull fails | No internet / proxy | Check connectivity; configure Docker's proxy if there is one |
 
 When diagnosing, always read the logs: `docker compose logs -f snowstorm-lite`.

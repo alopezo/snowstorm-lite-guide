@@ -39,6 +39,10 @@ services:
       # survives restarts. Without this it's written to /app (root) and fails with
       # AccessDenied, so the configured feed is lost on restart.
       - "--syndication.feed-config-file=lucene-index/syndication-feed-config.properties"
+      # Relevance window for filtered ValueSet $expand. The default (250) is small enough
+      # that good matches never reach the re-sort — e.g. searching "cancer" returns AJCC
+      # staging codes instead of Malignant neoplasm. See README (Search ranking and paging).
+      - "--search.valueset-expand.relevance-sort-window=10000"
     restart: unless-stopped
 
 volumes:
